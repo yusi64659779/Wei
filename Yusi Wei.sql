@@ -101,13 +101,16 @@ order by count(beer_id) desc;
 --Only include brewers that are located outside the United States 
 --and have more than the average number of beers from all breweries (excluding itself when calculating the average).  
 --Show the brewers with the most beers first.  If there is a tie in number of beers, then sort by the brewers’ names.
-SELECT name as brewery_name, count(beer_id) 
-FROM breweries brew1 natural JOIN beers beer1 
-group by name
-having avg(count(beer_id))=( SELECT AVG(count(beer_id)) 
-                             FROM breweries brew2 natural JOIN beers beer2 
-                             WHERE beer1.beer_id != beer2.beer_id)
-
+SELECT br.brewery_id, br.name, count(beer_id) as "Number of beers" 
+FROM beerdb.beers be INNER JOIN beerdb.breweries br 
+ON (be.brewery_id = br.brewery_id)
+WHERE country NOT LIKE 'United States' 
+GROUP BY br.name, br.brewery_id 
+HAVING COUNT(*) > (SELECT avg(count(*)) 
+                   FROM beerdb.beers be1 
+                   WHERE be1.brewery_id <> br.brewery_id 
+                   GROUP BY be1.brewery_id, br.brewery_id)
+ORDER BY COUNT(*) desc, br.name;
                   
 --For each movie display its movie title, year, and how many cast members were a part of the movie.  
 --Exclude movies with five or fewer cast members.  
@@ -168,7 +171,7 @@ order by max(film_year)-min(film_year) desc;
 
 
 --new
---?nd all breweries where the number of beers is greater than the average of the total number of beers at all breweries
+--find all breweries where the number of beers is greater than the average of the total number of beers at all breweries
 with num_of_beer (brewery_id, name, value) 
 as (select brewery_id, name, count(beer_id) 
     from breweries natural join beers 
@@ -224,5 +227,7 @@ select film_year, film_title, runtime, rank() OVER (ORDER BY (runtime) DESC)
 from (select film_year, film_title, runtime
       from movies
       where film_year<=1999 and runtime>0)
+      
+
 
 
